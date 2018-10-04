@@ -5,6 +5,8 @@ var Hue = require("./Hue.bs.js");
 var Block = require("bs-platform/lib/js/block.js");
 var Curry = require("bs-platform/lib/js/curry.js");
 var React = require("react");
+var Belt_List = require("bs-platform/lib/js/belt_List.js");
+var Pervasives = require("bs-platform/lib/js/pervasives.js");
 var ReasonReact = require("reason-react/src/ReasonReact.js");
 
 var component = ReasonReact.reducerComponent("BaseStation");
@@ -32,12 +34,45 @@ function make(discoveredStation, _) {
                     var match$1 = self[/* state */1][/* station */0];
                     if (match$1 !== undefined) {
                       var station = match$1;
-                      return React.createElement("div", undefined, React.createElement("div", undefined, "Name: " + station[/* name */0]), React.createElement("div", undefined, "ModelId: " + station[/* modelid */8]), React.createElement("button", {
+                      var match$2 = self[/* state */1][/* linkStatus */2];
+                      var tmp;
+                      switch (match$2) {
+                        case 0 : 
+                            tmp = React.createElement("button", {
+                                  className: "btn btn-warning",
+                                  disabled: true
+                                }, "Linking...");
+                            break;
+                        case 1 : 
+                            tmp = React.createElement("span", undefined, React.createElement("button", {
+                                      className: "btn btn-success",
+                                      disabled: true
+                                    }, "Linked"), React.createElement("button", {
+                                      className: "btn btn-danger",
                                       onClick: (function () {
-                                          console.log("Connect");
-                                          return /* () */0;
+                                          return Curry._1(self[/* send */3], /* Unlink */4);
                                         })
-                                    }, "Connect"));
+                                    }, "Unlink station."));
+                            break;
+                        case 2 : 
+                            tmp = React.createElement("button", {
+                                  className: "btn btn-primary",
+                                  onClick: (function () {
+                                      return Curry._1(self[/* send */3], /* StartLinking */2);
+                                    })
+                                }, "Link to Station");
+                            break;
+                        case 3 : 
+                            tmp = React.createElement("button", {
+                                  className: "btn btn-danger",
+                                  onClick: (function () {
+                                      return Curry._1(self[/* send */3], /* StartLinking */2);
+                                    })
+                                }, "Failed, Retry?");
+                            break;
+                        
+                      }
+                      return React.createElement("div", undefined, React.createElement("div", undefined, "Name: " + station[/* name */0]), React.createElement("div", undefined, "ModelId: " + station[/* modelid */8]), React.createElement("div", undefined, "Ip: " + discoveredStation[/* internalipaddress */1]), tmp);
                     } else {
                       return "This should never happen.";
                     }
@@ -51,40 +86,117 @@ function make(discoveredStation, _) {
           /* initialState */(function () {
               return /* record */[
                       /* station */undefined,
-                      /* status : Loading */3
+                      /* status : Loading */3,
+                      /* linkStatus : Unlinked */2
                     ];
             }),
           /* retainedProps */component[/* retainedProps */11],
           /* reducer */(function (action, state) {
               if (typeof action === "number") {
-                if (action !== 0) {
-                  return /* Update */Block.__(0, [/* record */[
-                              /* station */state[/* station */0],
-                              /* status : Failed */4
-                            ]]);
-                } else {
-                  return /* UpdateWithSideEffects */Block.__(2, [
-                            /* record */[
-                              /* station */state[/* station */0],
-                              /* status : Loading */3
-                            ],
-                            (function (self) {
-                                Hue.getInfo(discoveredStation).then((function (station) {
-                                          return Promise.resolve(Curry._1(self[/* send */3], /* LoadingFinished */[station]));
-                                        })).catch((function () {
-                                        return Promise.resolve(Curry._1(self[/* send */3], /* LoadingError */1));
-                                      }));
-                                return /* () */0;
-                              })
-                          ]);
+                switch (action) {
+                  case 0 : 
+                      return /* UpdateWithSideEffects */Block.__(2, [
+                                /* record */[
+                                  /* station */state[/* station */0],
+                                  /* status : Loading */3,
+                                  /* linkStatus */state[/* linkStatus */2]
+                                ],
+                                (function (self) {
+                                    Hue.getInfo(discoveredStation).then((function (station) {
+                                              return Promise.resolve(Curry._1(self[/* send */3], /* LoadingFinished */Block.__(0, [station])));
+                                            })).catch((function () {
+                                            return Promise.resolve(Curry._1(self[/* send */3], /* LoadingError */1));
+                                          }));
+                                    return /* () */0;
+                                  })
+                              ]);
+                  case 1 : 
+                      return /* Update */Block.__(0, [/* record */[
+                                  /* station */state[/* station */0],
+                                  /* status : Failed */4,
+                                  /* linkStatus */state[/* linkStatus */2]
+                                ]]);
+                  case 2 : 
+                      return /* UpdateWithSideEffects */Block.__(2, [
+                                /* record */[
+                                  /* station */state[/* station */0],
+                                  /* status */state[/* status */1],
+                                  /* linkStatus : Linking */0
+                                ],
+                                (function (self) {
+                                    Hue.linkWithStation(discoveredStation).then((function (responses) {
+                                              return Promise.resolve(Curry._1(self[/* send */3], /* LinkResponses */Block.__(1, [responses])));
+                                            })).catch((function () {
+                                            return Promise.resolve(Curry._1(self[/* send */3], /* LinkingFailed */3));
+                                          }));
+                                    return /* () */0;
+                                  })
+                              ]);
+                  case 3 : 
+                      return /* Update */Block.__(0, [/* record */[
+                                  /* station */state[/* station */0],
+                                  /* status */state[/* status */1],
+                                  /* linkStatus : Failed */3
+                                ]]);
+                  case 4 : 
+                      return /* UpdateWithSideEffects */Block.__(2, [
+                                /* record */[
+                                  /* station */state[/* station */0],
+                                  /* status */state[/* status */1],
+                                  /* linkStatus : Unlinked */2
+                                ],
+                                (function () {
+                                    return Hue.unlinkStation(discoveredStation[/* id */0]);
+                                  })
+                              ]);
+                  
                 }
               } else {
-                var station = action[0];
-                var status = station !== undefined ? /* Success */2 : /* Failed */4;
-                return /* Update */Block.__(0, [/* record */[
-                            /* station */station,
-                            /* status */status
-                          ]]);
+                switch (action.tag | 0) {
+                  case 0 : 
+                      var station = action[0];
+                      var status = station !== undefined ? /* Success */2 : /* Failed */4;
+                      var linkStatus = Hue.isLinked(discoveredStation[/* id */0]) ? /* Linked */1 : state[/* linkStatus */2];
+                      return /* Update */Block.__(0, [/* record */[
+                                  /* station */station,
+                                  /* status */status,
+                                  /* linkStatus */linkStatus
+                                ]]);
+                  case 1 : 
+                      var firstResponse = Belt_List.getExn(action[0], 0);
+                      var match = firstResponse[/* success */0];
+                      if (match !== undefined) {
+                        var succ = match;
+                        return /* SideEffects */Block.__(1, [(function (self) {
+                                      return Curry._1(self[/* send */3], /* LinkingSuccess */Block.__(2, [succ[/* username */0]]));
+                                    })]);
+                      } else {
+                        return /* SideEffects */Block.__(1, [(function (self) {
+                                      return Curry._1(self[/* send */3], /* LinkingFailed */3);
+                                    })]);
+                      }
+                  case 2 : 
+                      var username = action[0];
+                      return /* UpdateWithSideEffects */Block.__(2, [
+                                /* record */[
+                                  /* station */state[/* station */0],
+                                  /* status */state[/* status */1],
+                                  /* linkStatus : Linked */1
+                                ],
+                                (function () {
+                                    Hue.setLinkedStation(/* record */[
+                                          /* id */discoveredStation[/* id */0],
+                                          /* ip */discoveredStation[/* internalipaddress */1],
+                                          /* username */username,
+                                          /* timestamp */Pervasives.string_of_float(Date.now())
+                                        ]);
+                                    ReasonReact.Router[/* push */0]("/");
+                                    console.log(username);
+                                    return /* () */0;
+                                  })
+                              ]);
+                  
+                }
               }
             }),
           /* jsElementWrapped */component[/* jsElementWrapped */13]

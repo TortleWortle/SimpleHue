@@ -59,6 +59,9 @@ let make = _children => {
     self.send(StartDiscovering),
   render: self =>
     <div className="container">
+      <a onClick={_e => ReasonReact.Router.push("/")} href="/">
+        {ReasonReact.string("Back to Home.")}
+      </a>
       <h1> {ReasonReact.string("Discovered BaseStations")} </h1>
       <div>
         {

@@ -22,7 +22,9 @@ function make() {
           /* willUpdate */component[/* willUpdate */7],
           /* shouldUpdate */component[/* shouldUpdate */8],
           /* render */(function () {
-              return React.createElement("div", undefined, React.createElement("a", {
+              return React.createElement("div", {
+                          className: "container"
+                        }, React.createElement("a", {
                               href: "/setup",
                               onClick: (function ($$event) {
                                   $$event.preventDefault();
