@@ -148,16 +148,11 @@ let make = (~discoveredStation: Hue.discoveredStation, _children) => {
                 {ReasonReact.string("Failed, Retry?")}
               </button>
             | Linked =>
-              <span>
-                <button className="btn btn-success" disabled=true>
-                  {ReasonReact.string("Linked")}
-                </button>
-                <button
-                  className="btn btn-danger"
-                  onClick=(_event => self.send(Unlink))>
-                  {ReasonReact.string("Unlink station.")}
-                </button>
-              </span>
+              <button
+                className="btn btn-danger"
+                onClick=(_event => self.send(Unlink))>
+                {ReasonReact.string("Unlink station")}
+              </button>
             }
           }
         </div>

@@ -44,15 +44,12 @@ function make(discoveredStation, _) {
                                 }, "Linking...");
                             break;
                         case 1 : 
-                            tmp = React.createElement("span", undefined, React.createElement("button", {
-                                      className: "btn btn-success",
-                                      disabled: true
-                                    }, "Linked"), React.createElement("button", {
-                                      className: "btn btn-danger",
-                                      onClick: (function () {
-                                          return Curry._1(self[/* send */3], /* Unlink */4);
-                                        })
-                                    }, "Unlink station."));
+                            tmp = React.createElement("button", {
+                                  className: "btn btn-danger",
+                                  onClick: (function () {
+                                      return Curry._1(self[/* send */3], /* Unlink */4);
+                                    })
+                                }, "Unlink station");
                             break;
                         case 2 : 
                             tmp = React.createElement("button", {

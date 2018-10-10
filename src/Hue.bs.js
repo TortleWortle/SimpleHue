@@ -3,9 +3,17 @@
 
 var Json = require("@glennsl/bs-json/src/Json.bs.js");
 var Fetch = require("bs-fetch/src/Fetch.js");
+var Js_dict = require("bs-platform/lib/js/js_dict.js");
+var Js_json = require("bs-platform/lib/js/js_json.js");
+var Belt_List = require("bs-platform/lib/js/belt_List.js");
+var Belt_Array = require("bs-platform/lib/js/belt_Array.js");
+var Belt_Option = require("bs-platform/lib/js/belt_Option.js");
 var Json_decode = require("@glennsl/bs-json/src/Json_decode.bs.js");
 var Json_encode = require("@glennsl/bs-json/src/Json_encode.bs.js");
 var Js_primitive = require("bs-platform/lib/js/js_primitive.js");
+var Caml_exceptions = require("bs-platform/lib/js/caml_exceptions.js");
+
+var NoBaseStation = Caml_exceptions.create("Hue.NoBaseStation");
 
 function decodeDiscoveredStation(json) {
   return /* record */[
@@ -154,6 +162,76 @@ function unlinkStation() {
   return /* () */0;
 }
 
+function lightState(json) {
+  return /* record */[
+          /* on */Json_decode.field("on", Json_decode.bool, json),
+          /* brightness */Json_decode.field("bri", Json_decode.$$int, json),
+          /* hue */Json_decode.optional((function (param) {
+                  return Json_decode.field("hue", Json_decode.$$int, param);
+                }), json),
+          /* sat */Json_decode.optional((function (param) {
+                  return Json_decode.field("sat", Json_decode.$$int, param);
+                }), json)
+        ];
+}
+
+function light(json, id) {
+  return /* record */[
+          /* id */id,
+          /* state */Json_decode.field("state", lightState, json),
+          /* name */Json_decode.field("name", Json_decode.string, json)
+        ];
+}
+
+function lightsResponse(json) {
+  var __x = Js_dict.entries(Belt_Option.getExn(Js_json.decodeObject(json)));
+  return Belt_List.fromArray(Belt_Array.map(__x, (function (param) {
+                    return light(param[1], param[0]);
+                  })));
+}
+
+var LDecode = /* module */[
+  /* lightState */lightState,
+  /* light */light,
+  /* lightsResponse */lightsResponse
+];
+
+function getLights(station) {
+  return fetch("http://" + (station[/* ip */1] + ("/api/" + (station[/* username */2] + "/lights")))).then((function (prim) {
+                  return prim.json();
+                })).then((function (json) {
+                return Promise.resolve(lightsResponse(json));
+              }));
+}
+
+function updateLight(light) {
+  var match = getLinkedStation(/* () */0);
+  var station;
+  if (match !== undefined) {
+    station = match;
+  } else {
+    throw NoBaseStation;
+  }
+  return fetch("http://" + (station[/* ip */1] + ("/api/" + (station[/* username */2] + ("/lights/" + (light[/* id */0] + "/state"))))), Fetch.RequestInit[/* make */0](/* Put */3, {
+                      "Content-Type": "application/json"
+                    }, Js_primitive.some(JSON.stringify(Json_encode.object_(/* :: */[
+                                  /* tuple */[
+                                    "on",
+                                    light[/* state */1][/* on */0]
+                                  ],
+                                  /* :: */[
+                                    /* tuple */[
+                                      "bri",
+                                      light[/* state */1][/* brightness */1]
+                                    ],
+                                    /* [] */0
+                                  ]
+                                ]))), undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined)(/* () */0)).then((function (prim) {
+                return prim.json();
+              }));
+}
+
+exports.NoBaseStation = NoBaseStation;
 exports.Decode = Decode;
 exports.discover = discover;
 exports.getInfo = getInfo;
@@ -164,4 +242,7 @@ exports.getLinkedStation = getLinkedStation;
 exports.isLinked = isLinked;
 exports.setLinkedStation = setLinkedStation;
 exports.unlinkStation = unlinkStation;
-/* Json_encode Not a pure module */
+exports.LDecode = LDecode;
+exports.getLights = getLights;
+exports.updateLight = updateLight;
+/* Js_dict Not a pure module */

@@ -50,12 +50,7 @@ function make() {
               }
               return React.createElement("div", {
                           className: "container"
-                        }, React.createElement("a", {
-                              href: "/",
-                              onClick: (function () {
-                                  return ReasonReact.Router[/* push */0]("/");
-                                })
-                            }, "Back to Home."), React.createElement("h1", undefined, "Discovered BaseStations"), React.createElement("div", undefined, tmp));
+                        }, React.createElement("h1", undefined, "Discovered BaseStations"), React.createElement("div", undefined, tmp));
             }),
           /* initialState */(function () {
               return /* record */[

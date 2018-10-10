@@ -23,7 +23,8 @@
         "reason-react",
         "bs-fetch",
         "@glennsl/bs-json",
-        "bs-css"
+        "bs-css",
+        "re-debouncer"
     ],
     "refmt": 3
 }

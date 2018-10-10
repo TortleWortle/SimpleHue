@@ -1,3 +1,5 @@
+exception NoBaseStation;
+
 type discoveredStation = {
   id: string,
   internalipaddress: string,
@@ -87,6 +89,7 @@ let discover = () =>
     |> then_(json => json |> Decode.discoveredStations |> resolve)
   );
 
+/* Get info from a base station */
 let getInfo = (station: discoveredStation) =>
   Js.Promise.(
     Fetch.fetch("http://" ++ station.internalipaddress ++ "/api/config")
@@ -94,6 +97,7 @@ let getInfo = (station: discoveredStation) =>
     |> then_(json => json |> Decode.baseStation |> resolve)
   );
 
+/* Link with a base station */
 let linkWithStation = (station: discoveredStation) => {
   let payload = Js.Dict.empty();
   Js.Dict.set(payload, "devicetype", Js.Json.string("SimpleHue#WebClient"));
@@ -113,6 +117,7 @@ let linkWithStation = (station: discoveredStation) => {
   );
 };
 
+/* LocalStorage decoder */
 module LSDecode = {
   let linkedStation = json: linkedStation =>
     Json.Decode.{
@@ -122,6 +127,7 @@ module LSDecode = {
       timestamp: json |> field("timestamp", string),
     };
 };
+/* LocalStorage encoder. */
 module LSEncode = {
   let linkedStation = (station: linkedStation) =>
     Json.Encode.(
@@ -152,6 +158,7 @@ let isLinked = id: bool =>
   | None => false
   };
 
+/* Store linked station in localstorage */
 let setLinkedStation = (station: linkedStation) =>
   Dom.Storage.(
     localStorage
@@ -161,6 +168,89 @@ let setLinkedStation = (station: linkedStation) =>
        )
   );
 
-/* Unused, probably used later on. */
+/* _id unused. */
 let unlinkStation = _id =>
   Dom.Storage.(localStorage |> removeItem("linkedStation"));
+
+/* LIGHTS */
+
+type lightState = {
+  on: bool,
+  brightness: int,
+  hue: option(int),
+  sat: option(int),
+};
+
+type light = {
+  id: string,
+  state: lightState,
+  name: string,
+};
+
+module LDecode = {
+  let lightState = json: lightState =>
+    Json.Decode.{
+      on: json |> field("on", bool),
+      brightness: json |> field("bri", int),
+      hue: json |> optional(field("hue", int)),
+      sat: json |> optional(field("sat", int)),
+    };
+  let light = (json, id): light =>
+    Json.Decode.{
+      id,
+      state: json |> field("state", lightState),
+      name: json |> field("name", string),
+    };
+  let lightsResponse = json: list(light) =>
+    Js.Json.decodeObject(json)
+    |> Belt.Option.getExn
+    |> Js.Dict.entries
+    |> Belt.Array.map(_, ((k, v)) => light(v, k))
+    |> Belt.List.fromArray;
+};
+
+let getLights = (station: linkedStation) =>
+  Js.Promise.(
+    Fetch.fetch(
+      "http://" ++ station.ip ++ "/api/" ++ station.username ++ "/lights",
+    )
+    |> then_(Fetch.Response.json)
+    |> then_(json => LDecode.lightsResponse(json) |> resolve)
+  );
+
+let updateLight = (light: light) => {
+  let station =
+    switch (getLinkedStation()) {
+    | Some(station) => station
+    | None => raise_notrace(NoBaseStation)
+    };
+
+  Js.Promise.(
+    Fetch.fetchWithInit(
+      "http://"
+      ++ station.ip
+      ++ "/api/"
+      ++ station.username
+      ++ "/lights/"
+      ++ light.id
+      ++ "/state",
+      Fetch.RequestInit.make(
+        ~method_=Put,
+        ~body=
+          Fetch.BodyInit.make(
+            Js.Json.stringify(
+              Json.Encode.(
+                object_([
+                  ("on", bool(light.state.on)),
+                  ("bri", int(light.state.brightness)),
+                ])
+              ),
+            ),
+          ),
+        ~headers=Fetch.HeadersInit.make({"Content-Type": "application/json"}),
+        (),
+      ),
+    )
+    |> then_(Fetch.Response.json)
+  );
+};
