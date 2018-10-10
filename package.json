@@ -28,6 +28,7 @@
         "cssnano": "^4.1.4",
         "webpack": "4.19.1",
         "webpack-cli": "^2.0.10",
-        "webpack-dev-server": "^3.1.9"
+        "webpack-dev-server": "^3.1.9",
+        "parcel-bundler": "^1.10.2"
     }
 }
